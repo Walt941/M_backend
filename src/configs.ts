@@ -8,4 +8,10 @@ export const {
   DB_PASSWORD,
   DB_HOST,
   DB_DATABASE,
-} = {...process.env } as { [key: string]: string };
+  JWT_SECRET,
+  MAIL_SERVICE,
+  MAIL_USER,
+  MAIL_USER_SECRET,
+  FRONTEND_LINK,
+  OWN_LINK,
+} = process.env as { [key: string]: string };
