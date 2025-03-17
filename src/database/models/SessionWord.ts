@@ -1,5 +1,6 @@
 import { Model, DataTypes } from 'sequelize';
 import connection from './connection';
+import Word from './Word';  
 
 interface SessionWordAttributes {
   id?: string;
@@ -8,6 +9,7 @@ interface SessionWordAttributes {
   updatedAt?: Date;
   deletedAt?: Date;
   createdAt?: Date;
+  word?: Word;  
 }
 
 class SessionWord extends Model<SessionWordAttributes> implements SessionWordAttributes {
@@ -17,6 +19,9 @@ class SessionWord extends Model<SessionWordAttributes> implements SessionWordAtt
   public readonly updatedAt!: Date;
   public readonly createdAt!: Date;
 
+  
+  declare word?: Word;
+
   static associate(models: Record<string, any>) {
     this.belongsTo(models.TypingSession, {
       foreignKey: 'session_id',
@@ -24,7 +29,7 @@ class SessionWord extends Model<SessionWordAttributes> implements SessionWordAtt
     });
     this.belongsTo(models.Word, {
       foreignKey: 'word_id',
-      as: 'word',
+      as: 'word',  
     });
   }
 }
