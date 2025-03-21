@@ -1,5 +1,7 @@
 import { Model, DataTypes } from 'sequelize';
-import connection from './connection';
+import { sequelize } from './index';
+import WordLetter from './WordLetter';
+import SessionWord from './SessionWord';
 
 interface WordAttributes {
   id?: string;
@@ -7,6 +9,8 @@ interface WordAttributes {
   updatedAt?: Date;
   deletedAt?: Date;
   createdAt?: Date;
+  sessionWords?: SessionWord[];
+  wordLetters?: WordLetter[];
 }
 
 class Word extends Model<WordAttributes> implements WordAttributes {
@@ -15,16 +19,8 @@ class Word extends Model<WordAttributes> implements WordAttributes {
   public readonly updatedAt!: Date;
   public readonly createdAt!: Date;
 
-  static associate(models: Record<string, any>) {
-    this.hasMany(models.SessionWord, {
-      foreignKey: 'word_id',
-      as: 'sessionWords',
-    });
-    this.hasMany(models.WordLetter, {
-      foreignKey: 'word_id',
-      as: 'wordLetters',
-    });
-  }
+  declare sessionWords?: SessionWord[];
+  declare wordLetters?: WordLetter[];
 }
 
 Word.init(
@@ -49,9 +45,30 @@ Word.init(
     },
   },
   {
-    sequelize: connection,
+    sequelize,
     modelName: 'Word',
   }
 );
+
+
+Word.hasMany(WordLetter, {
+  foreignKey: 'word_id',
+  as: 'wordLetters',
+});
+
+WordLetter.belongsTo(Word, {
+  foreignKey: 'word_id',
+  as: 'word',
+});
+
+Word.hasMany(SessionWord, {
+  foreignKey: 'word_id',
+  as: 'sessionWords',
+});
+
+SessionWord.belongsTo(Word, {
+  foreignKey: 'word_id',
+  as: 'word',
+});
 
 export default Word;

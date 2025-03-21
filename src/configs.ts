@@ -8,6 +8,7 @@ export const {
   DB_PASSWORD,
   DB_HOST,
   DB_DATABASE,
+  DB_DIALECT,
   JWT_SECRET,
   MAIL_SERVICE,
   MAIL_USER,

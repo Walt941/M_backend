@@ -26,10 +26,16 @@ module.exports = {
                 },
             allowNull: false
         },
-        error_count: {
-            type: Sequelize.INTEGER,
-            allowNull: false
-        },
+        is_error: {
+            type: DataTypes.BOOLEAN, 
+            allowNull: false,
+            defaultValue: false, 
+          },
+          time: {
+            type: DataTypes.INTEGER, 
+            allowNull: false,
+            defaultValue: 0, 
+          },
         position: {
             type: Sequelize.INTEGER,
             allowNull: false

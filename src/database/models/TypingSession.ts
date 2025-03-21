@@ -1,10 +1,11 @@
 import { Model, DataTypes } from 'sequelize';
-import connection from './connection';
+import { sequelize } from './index';
+import User from './User';
+import SessionWord from './SessionWord';
 
 interface TypingSessionAttributes {
   id?: string;
   user_id: string;
-
   updatedAt?: Date;
   deletedAt?: Date;
   createdAt?: Date;
@@ -13,20 +14,11 @@ interface TypingSessionAttributes {
 class TypingSession extends Model<TypingSessionAttributes> implements TypingSessionAttributes {
   public id!: string;
   public user_id!: string;
-
   public readonly updatedAt!: Date;
   public readonly createdAt!: Date;
 
-  static associate(models: Record<string, any>) {
-    this.belongsTo(models.User, {
-      foreignKey: 'user_id',
-      as: 'user',
-    });
-    this.hasMany(models.SessionWord, {
-      foreignKey: 'session_id',
-      as: 'sessionWords',
-    });
-  }
+  public user?: User;
+  public sessionWords?: SessionWord[];
 }
 
 TypingSession.init(
@@ -40,12 +32,11 @@ TypingSession.init(
     user_id: {
       type: DataTypes.UUID,
       references: {
-        model: 'User', 
+        model: 'User',
         key: 'id',
       },
       allowNull: false,
     },
-
     createdAt: {
       allowNull: false,
       type: DataTypes.DATE,
@@ -56,9 +47,16 @@ TypingSession.init(
     },
   },
   {
-    sequelize: connection,
+    sequelize,
     modelName: 'TypingSession',
   }
 );
+
+
+
+SessionWord.belongsTo(TypingSession, {
+  foreignKey: 'session_id',
+  as: 'typingSession',
+});
 
 export default TypingSession;

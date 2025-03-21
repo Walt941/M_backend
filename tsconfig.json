@@ -22,6 +22,6 @@
     "typeRoots": ["./src/typings", "../../node_modules/@types"],
     "outDir": "build"
   },
-  "include": ["./**/*.ts"],
+  "include": ["./**/*.ts", "src/database/sequelize.config.js"],
   "exclude": ["node_modules", "build", "dist"]
 }

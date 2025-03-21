@@ -1,36 +1,34 @@
 import { Model, DataTypes } from 'sequelize';
-import connection from './connection';
+import { sequelize } from './index';
+import Word from './Word';
+import Letter from './Letter';
 
 interface WordLetterAttributes {
   id?: string;
   word_id: string;
   letter_id: string;
-  error_count: number;
+  is_error: boolean; 
+  time: number; 
   position: number;
   updatedAt?: Date;
   deletedAt?: Date;
   createdAt?: Date;
+  word?: Word;
+  letter?: Letter;
 }
 
 class WordLetter extends Model<WordLetterAttributes> implements WordLetterAttributes {
   public id!: string;
   public word_id!: string;
   public letter_id!: string;
-  public error_count!: number;
+  public is_error!: boolean; 
+  public time!: number;
   public position!: number;
   public readonly updatedAt!: Date;
   public readonly createdAt!: Date;
 
-  static associate(models: Record<string, any>) {
-    this.belongsTo(models.Word, {
-      foreignKey: 'word_id',
-      as: 'word',
-    });
-    this.belongsTo(models.Letter, {
-      foreignKey: 'letter_id',
-      as: 'letter',
-    });
-  }
+  declare word?: Word;
+  declare letter?: Letter;
 }
 
 WordLetter.init(
@@ -57,9 +55,15 @@ WordLetter.init(
       },
       allowNull: false,
     },
-    error_count: {
-      type: DataTypes.INTEGER,
+    is_error: {
+      type: DataTypes.BOOLEAN,
       allowNull: false,
+      defaultValue: false, 
+    },
+    time: {
+      type: DataTypes.INTEGER, 
+      allowNull: false,
+      defaultValue: 0, 
     },
     position: {
       type: DataTypes.INTEGER,
@@ -75,9 +79,11 @@ WordLetter.init(
     },
   },
   {
-    sequelize: connection,
+    sequelize,
     modelName: 'WordLetter',
   }
 );
+
+
 
 export default WordLetter;

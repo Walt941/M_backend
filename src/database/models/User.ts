@@ -1,5 +1,6 @@
 import { Model, DataTypes } from 'sequelize';
-import connection from './connection';
+import { sequelize } from './index';
+import TypingSession from './TypingSession';
 
 interface UserAttributes {
   id?: string;
@@ -9,7 +10,6 @@ interface UserAttributes {
   email_verified: boolean;
   resetCode: string | null;
   resetCodeExpiry: Date | null;
-
   updatedAt?: Date;
   deletedAt?: Date;
   createdAt?: Date;
@@ -26,13 +26,6 @@ class User extends Model<UserAttributes> implements UserAttributes {
 
   public readonly updatedAt!: Date;
   public readonly createdAt!: Date;
-
-  static associate(models: Record<string, any>) {
-    this.hasMany(models.TypingSession, {
-      foreignKey: 'user_id',
-      as: 'typingSessions',
-    });
-  }
 }
 
 User.init(
@@ -67,7 +60,6 @@ User.init(
       type: DataTypes.DATE,
       allowNull: true,
     },
-
     createdAt: {
       allowNull: false,
       type: DataTypes.DATE,
@@ -78,9 +70,16 @@ User.init(
     },
   },
   {
-    sequelize: connection,
+    sequelize,
     modelName: 'User',
   }
 );
+
+
+
+TypingSession.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'user',
+});
 
 export default User;

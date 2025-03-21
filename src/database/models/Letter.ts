@@ -1,5 +1,6 @@
 import { Model, DataTypes } from 'sequelize';
-import connection from './connection';
+import { sequelize } from './index';
+import WordLetter from './WordLetter';
 
 interface LetterAttributes {
   id?: string;
@@ -7,6 +8,7 @@ interface LetterAttributes {
   updatedAt?: Date;
   deletedAt?: Date;
   createdAt?: Date;
+  wordLetters?: WordLetter[];
 }
 
 class Letter extends Model<LetterAttributes> implements LetterAttributes {
@@ -15,12 +17,7 @@ class Letter extends Model<LetterAttributes> implements LetterAttributes {
   public readonly updatedAt!: Date;
   public readonly createdAt!: Date;
 
-  static associate(models: Record<string, any>) {
-    this.hasMany(models.WordLetter, {
-      foreignKey: 'letter_id',
-      as: 'wordLetters',
-    });
-  }
+  declare wordLetters?: WordLetter[];
 }
 
 Letter.init(
@@ -34,6 +31,7 @@ Letter.init(
     letter: {
       type: DataTypes.STRING,
       allowNull: false,
+      unique: true,
     },
     createdAt: {
       allowNull: false,
@@ -45,9 +43,20 @@ Letter.init(
     },
   },
   {
-    sequelize: connection,
+    sequelize,
     modelName: 'Letter',
   }
 );
+
+
+Letter.hasMany(WordLetter, {
+  foreignKey: 'letter_id',
+  as: 'wordLetters',
+});
+
+WordLetter.belongsTo(Letter, {
+  foreignKey: 'letter_id',
+  as: 'letter',
+});
 
 export default Letter;

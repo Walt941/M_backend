@@ -1,10 +1,17 @@
 import { Router } from 'express';
 import { register,login,verifyEmail,forgotPassword,resetPassword,getAllUsers,deleteUserById,getUserById,updateUserById,} from '../controllers/User'; 
-import { createSession, getSessionWords } from '../controllers/TypingSession';
+import { createTypingSession} from '../controllers/TypingSession';
+
+import { getAndLinkSessionWords } from '../controllers/TypingSession';
+
+
 const userRoutes = Router();
 
-userRoutes.post('/sessions', createSession);
-userRoutes.get('/sessions/:sessionId/words', getSessionWords);
+
+
+userRoutes.get('/sessions/:sessionId/words',getAndLinkSessionWords);
+userRoutes.post('/sessions', createTypingSession);
+
 
 
 userRoutes.post('/register', register); 

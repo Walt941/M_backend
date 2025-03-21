@@ -1,6 +1,7 @@
 import { Model, DataTypes } from 'sequelize';
-import connection from './connection';
-import Word from './Word';  
+import { sequelize } from './index';
+import TypingSession from './TypingSession';
+import Word from './Word';
 
 interface SessionWordAttributes {
   id?: string;
@@ -9,7 +10,8 @@ interface SessionWordAttributes {
   updatedAt?: Date;
   deletedAt?: Date;
   createdAt?: Date;
-  word?: Word;  
+  typingSession?: TypingSession;
+  word?: Word;
 }
 
 class SessionWord extends Model<SessionWordAttributes> implements SessionWordAttributes {
@@ -19,19 +21,8 @@ class SessionWord extends Model<SessionWordAttributes> implements SessionWordAtt
   public readonly updatedAt!: Date;
   public readonly createdAt!: Date;
 
-  
+  declare typingSession?: TypingSession;
   declare word?: Word;
-
-  static associate(models: Record<string, any>) {
-    this.belongsTo(models.TypingSession, {
-      foreignKey: 'session_id',
-      as: 'typingSession',
-    });
-    this.belongsTo(models.Word, {
-      foreignKey: 'word_id',
-      as: 'word',  
-    });
-  }
 }
 
 SessionWord.init(
@@ -68,9 +59,11 @@ SessionWord.init(
     },
   },
   {
-    sequelize: connection,
+    sequelize,
     modelName: 'SessionWord',
   }
 );
+
+
 
 export default SessionWord;
