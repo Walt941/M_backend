@@ -1,14 +1,14 @@
 import { Router } from 'express';
 import { register,login,verifyEmail,forgotPassword,resetPassword,getAllUsers,deleteUserById,getUserById,updateUserById,} from '../controllers/User'; 
 import { createTypingSession} from '../controllers/TypingSession';
-
+import { saveLetter } from '../controllers/Letter';
 import { getAndLinkSessionWords } from '../controllers/TypingSession';
 
 
 const userRoutes = Router();
 
 
-
+userRoutes.post('/letters', saveLetter);
 userRoutes.get('/sessions/:sessionId/words',getAndLinkSessionWords);
 userRoutes.post('/sessions', createTypingSession);
 
