@@ -4,15 +4,14 @@ import WordLetter from '../database/models/WordLetter';
 import { sequelize } from '../database/models/index'; 
 
 export const saveLettersBatch = async (req: Request, res: Response) => {
-  const { wordId, letters } = req.body;
+  const { wordId, letters, sessionId } = req.body; 
 
-  console.log('Datos recibidos:', { wordId, letters }); 
+  console.log('Datos recibidos:', { wordId, letters, sessionId }); 
 
-
-  if (!wordId || !letters || !Array.isArray(letters)) {
-    console.error('Datos inválidos: wordId y letters son requeridos'); 
+  if (!wordId || !letters || !Array.isArray(letters) || !sessionId) {
+    console.error('Datos inválidos: wordId, letters y sessionId son requeridos'); 
     return res.status(400).json({
-      message: 'Datos inválidos: wordId y letters son requeridos',
+      message: 'Datos inválidos: wordId, letters y sessionId son requeridos',
     });
   }
 
@@ -22,7 +21,7 @@ export const saveLettersBatch = async (req: Request, res: Response) => {
     for (const letterData of letters) {
       const { letter, isError, position, timeTaken } = letterData;
 
-      
+     
       if (
         typeof letter !== 'string' ||
         typeof isError !== 'boolean' ||
@@ -42,12 +41,8 @@ export const saveLettersBatch = async (req: Request, res: Response) => {
         transaction,
       });
 
-      console.log('Letra encontrada en la base de datos:', existingLetter); 
-
-      
       if (!existingLetter) {
         existingLetter = await Letter.create({ letter }, { transaction });
-        console.log('Nueva letra creada:', existingLetter); 
       }
 
       
@@ -61,7 +56,6 @@ export const saveLettersBatch = async (req: Request, res: Response) => {
       });
 
       if (existingWordLetter) {
-        console.log('Relación WordLetter ya existe:', existingWordLetter); 
         continue; 
       }
 
@@ -70,19 +64,16 @@ export const saveLettersBatch = async (req: Request, res: Response) => {
         {
           word_id: wordId,
           letter_id: existingLetter.id, 
+          session_id: sessionId, 
           is_error: isError,
           time: timeTaken,
           position: position,
         },
         { transaction }
       );
-
-      console.log('Relación WordLetter creada:', newWordLetter); 
     }
 
     await transaction.commit(); 
-    console.log('Transacción completada con éxito'); 
-
     return res.status(201).json({ message: 'Letras guardadas exitosamente' });
   } catch (error: any) {
     await transaction.rollback(); 

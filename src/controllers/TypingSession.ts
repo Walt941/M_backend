@@ -44,14 +44,13 @@ export const getAndLinkSessionWords = async (req: Request, res: Response) => {
     const transaction = await sequelize.transaction();  
 
     try {
-       
+        
         const session = await TypingSession.findByPk(sessionId, { transaction });
         if (!session) {
             await transaction.rollback();
             return res.status(404).json({ message: 'Sesión no encontrada' });
         }
 
-        
         const words = await Word.findAll({
             order: sequelize.random(), 
             limit: 20, 
@@ -63,7 +62,6 @@ export const getAndLinkSessionWords = async (req: Request, res: Response) => {
             return res.status(404).json({ message: 'No se encontraron palabras' });
         }
 
-       
         const sessionWords = words.map((word) => ({
             session_id: session.id,
             word_id: word.id,

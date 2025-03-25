@@ -26,6 +26,14 @@ module.exports = {
                 },
             allowNull: false
         },
+        session_id: {
+            type: Sequelize.UUID,
+                references: {
+                    model: 'TypingSessions', 
+                    key: 'id', 
+                },
+            allowNull: false
+        },
         is_error: {
             type: DataTypes.BOOLEAN, 
             allowNull: false,

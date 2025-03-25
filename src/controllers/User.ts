@@ -214,41 +214,6 @@ export const login = async (req: any, res: any) => {
     }
 };
 
-export const getAllUsers = async (req: any, res: any) => {
-    try {
-        const users = await User.findAll({
-            attributes: ['id', 'username', 'email'],
-        });
-
-        return res.status(200).json(users);
-    } catch (error: any) {
-        console.error(error);
-        return res.status(500).json({
-            message: 'Error al obtener los usuarios',
-            error: error.message,
-        });
-    }
-};
-
-export const deleteUserById = async (req: any, res: any) => {
-    const { id } = req.params;
-    try {
-        const userToDelete = await User.findByPk(id);
-
-        if (!userToDelete) {
-            return res.status(404).json({ message: 'Usuario no encontrado' });
-        }
-
-        await userToDelete.destroy();
-        return res.status(200).json({ message: 'Usuario eliminado exitosamente' });
-    } catch (error: any) {
-        console.error(error);
-        return res.status(500).json({
-            message: 'Error al eliminar el usuario',
-            error: error.message,
-        });
-    }
-};
 
 export const getUserById = async (req: any, res: any) => {
     const { id } = req.params;
@@ -272,33 +237,3 @@ export const getUserById = async (req: any, res: any) => {
     }
 };
 
-export const updateUserById = async (req: any, res: any) => {
-    const { id } = req.params;
-    const { username } = req.body;
-    try {
-        const user = await User.findByPk(id);
-        if (!user) {
-            return res.status(404).json({ message: 'Usuario no encontrado' });
-        }
-
-        await user.update({ username });
-
-        return res.status(200).json({
-            username: user.username,
-        });
-    } catch (error: any) {
-        console.error(error);
-
-        if (error.name === 'ValidationError') {
-            return res.status(400).json({
-                message: 'Error de validación',
-                errors: error.errors,
-            });
-        }
-
-        return res.status(500).json({
-            message: 'Error al actualizar el usuario',
-            error: error.message,
-        });
-    }
-};

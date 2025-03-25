@@ -2,11 +2,13 @@ import { Model, DataTypes } from 'sequelize';
 import { sequelize } from './index';
 import Word from './Word';
 import Letter from './Letter';
+import TypingSession from './TypingSession'; 
 
 interface WordLetterAttributes {
   id?: string;
   word_id: string;
   letter_id: string;
+  session_id: string; 
   is_error: boolean; 
   time: number; 
   position: number;
@@ -15,12 +17,14 @@ interface WordLetterAttributes {
   createdAt?: Date;
   word?: Word;
   letter?: Letter;
+  typingSession?: TypingSession; 
 }
 
 class WordLetter extends Model<WordLetterAttributes> implements WordLetterAttributes {
   public id!: string;
   public word_id!: string;
   public letter_id!: string;
+  public session_id!: string; 
   public is_error!: boolean; 
   public time!: number;
   public position!: number;
@@ -29,6 +33,7 @@ class WordLetter extends Model<WordLetterAttributes> implements WordLetterAttrib
 
   declare word?: Word;
   declare letter?: Letter;
+  declare typingSession?: TypingSession; 
 }
 
 WordLetter.init(
@@ -51,6 +56,14 @@ WordLetter.init(
       type: DataTypes.UUID,
       references: {
         model: 'Letter',
+        key: 'id',
+      },
+      allowNull: false,
+    },
+    session_id: {
+      type: DataTypes.UUID, 
+      references: {
+        model: 'TypingSession', 
         key: 'id',
       },
       allowNull: false,
@@ -85,5 +98,14 @@ WordLetter.init(
 );
 
 
+WordLetter.belongsTo(TypingSession, {
+  foreignKey: 'session_id',
+  as: 'typingSession',
+});
+
+TypingSession.hasMany(WordLetter, {
+  foreignKey: 'session_id',
+  as: 'wordLetters',
+});
 
 export default WordLetter;

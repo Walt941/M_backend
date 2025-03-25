@@ -93,7 +93,6 @@ const sendResetPasswordEmail = async (
 
         <div style="margin-top: 25px; padding-top: 15px; border-top: 1px solid #eee; color: #666; font-size: 13px;">
           <p>Este código expirará en 15 minutos.</p>
-          <p>Si no solicitaste este cambio, por favor contacta a soporte inmediatamente.</p>
         </div>
       </div>
     `
