@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer';
 import { SentMessageInfo, SendMailOptions } from 'nodemailer';
 import { MAIL_USER, MAIL_USER_SECRET, OWN_LINK, PORT } from '../../configs';
-
+import {logger} from '../../database/config/winston.config'; 
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -12,10 +12,9 @@ const transporter = nodemailer.createTransport({
     user: MAIL_USER,
     pass: MAIL_USER_SECRET 
   },
-  logger: true, 
-  debug: true 
+  logger: false, 
+  debug: false   
 });
-
 
 const sendVerificationEmail = async (
   email: string,
@@ -23,6 +22,12 @@ const sendVerificationEmail = async (
   userId: string
 ): Promise<void> => {
   const verificationLink = `${OWN_LINK}${PORT ? `:${PORT}` : ''}/api/verify-email?userId=${userId}`;
+
+  logger.info('Preparando email de verificación', {
+    email,
+    userId,
+    verificationLink: verificationLink.replace(userId, '***') 
+  });
 
   const mailOptions: SendMailOptions = {
     from: `Soporte Técnico <${MAIL_USER}>`,
@@ -58,18 +63,31 @@ const sendVerificationEmail = async (
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log(`📧 Email de verificación enviado a ${email} (ID: ${info.messageId})`);
+    logger.info('Email de verificación enviado exitosamente', {
+      email,
+      messageId: info.messageId,
+      response: info.response
+    });
   } catch (error) {
-    console.error('🔥 Error al enviar el correo:', error);
+    logger.error('Error al enviar email de verificación', {
+      error: error instanceof Error ? error.message : 'Error desconocido',
+      stack: error instanceof Error ? error.stack : undefined,
+      email,
+      userId
+    });
     throw new Error('Error al enviar el email de verificación. Por favor intenta nuevamente.');
   }
 };
-
 
 const sendResetPasswordEmail = async (
   email: string, 
   resetCode: string
 ): Promise<SentMessageInfo> => {
+  logger.info('Preparando email de restablecimiento de contraseña', {
+    email,
+    resetCode: '******' 
+  });
+
   const mailOptions: SendMailOptions = {
     from: `Soporte Técnico <${MAIL_USER}>`,
     to: email,
@@ -100,10 +118,17 @@ const sendResetPasswordEmail = async (
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log(`📧 Email de restablecimiento enviado a ${email} (ID: ${info.messageId})`);
+    logger.info('Email de restablecimiento enviado exitosamente', {
+      email,
+      messageId: info.messageId
+    });
     return info;
   } catch (error) {
-    console.error('🔥 Error al enviar correo de restablecimiento:', error);
+    logger.error('Error al enviar email de restablecimiento', {
+      error: error instanceof Error ? error.message : 'Error desconocido',
+      stack: error instanceof Error ? error.stack : undefined,
+      email
+    });
     throw new Error('Error al enviar el email de restablecimiento');
   }
 };

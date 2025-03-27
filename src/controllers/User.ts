@@ -1,10 +1,11 @@
 import bcrypt from 'bcryptjs';
-import  User  from '../database/models/User'; 
+import User from '../database/models/User'; 
 import { userSchemaValidator } from '../validators/userValidator';
 import loginSchemaValidator from '../validators/loginValidator';
 import jwt from 'jsonwebtoken';
 import { sendVerificationEmail, sendResetPasswordEmail } from '../services/nodeMailer/mailer';
 import crypto from 'crypto';
+import { logger } from '../database/config/winston.config';
 
 const frontendLink = process.env.FRONTEND_LINK;
 
@@ -19,27 +20,34 @@ interface IUser {
 }
 
 export const register = async (req: any, res: any) => {
-    try {
+    const { username, email } = req.body;
+    const registerLogMessage = 'Iniciando registro de usuario';
+    logger.info(registerLogMessage, { username, email });
 
-        const { username, email, password } = req.body;
+    try {
         await userSchemaValidator.validate(req.body);
 
-       
-
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPassword = await bcrypt.hash(req.body.password, 10);
 
         const newUser = await User.create({
             username,
             email,
             password: hashedPassword,
             email_verified: false,
-            
+        });
+
+        const successMessage = 'Usuario registrado exitosamente';
+        logger.info(successMessage, {
+            userId: newUser.id,
+            email: newUser.email
         });
 
         sendVerificationEmail(email, username, newUser.id);
+        const emailSentMessage = 'Email de verificación enviado';
+        logger.debug(emailSentMessage, { email });
 
         return res.status(201).json({
-            message: 'Usuario registrado exitosamente',
+            message: successMessage,
             user: {
                 id: newUser.id,
                 username: newUser.username,
@@ -47,18 +55,26 @@ export const register = async (req: any, res: any) => {
             },
         });
     } catch (error: any) {
-        console.error(error);
+        const errorMessage = 'Error en registro de usuario';
+        logger.error(errorMessage, {
+            error: error.message,
+            stack: error.stack
+        });
 
         if (error.name === 'SequelizeUniqueConstraintError') {
-            return res.status(400).json({ message: 'El correo electrónico ya existe.' });
+            const duplicateEmailMessage = 'El correo electrónico ya existe';
+            logger.warn('Intento de registro con email existente', { email: req.body.email });
+            return res.status(400).json({ message: duplicateEmailMessage });
         }
 
         if (error.name === 'ValidationError') {
-            return res.status(400).json({ message: error.errors });
+            const validationMessage = 'Error de validación en registro';
+            logger.warn(validationMessage, { errors: error.errors });
+            return res.status(400).json({ message: validationMessage, errors: error.errors });
         }
 
         return res.status(500).json({
-            message: 'Error al crear el usuario',
+            message: errorMessage,
             error: error.message,
         });
     }
@@ -66,15 +82,21 @@ export const register = async (req: any, res: any) => {
 
 export const verifyEmail = async (req: any, res: any) => {
     const { userId } = req.query;
+    const verifyEmailLogMessage = 'Verificando email de usuario';
+    logger.info(verifyEmailLogMessage, { userId });
 
     try {
         const user = await User.findByPk(userId);
 
         if (!user) {
-            return res.status(404).json({ message: 'Usuario no encontrado.' });
+            const notFoundMessage = 'Usuario no encontrado';
+            logger.warn(notFoundMessage, { userId });
+            return res.status(404).json({ message: notFoundMessage });
         }
 
         if (user.email_verified) {
+            const alreadyVerifiedMessage = 'Email ya verificado previamente';
+            logger.info(alreadyVerifiedMessage, { userId, email: user.email });
             return res.status(400).send(`
                 <html>
                     <head>
@@ -96,6 +118,10 @@ export const verifyEmail = async (req: any, res: any) => {
 
         user.email_verified = true;
         await user.save();
+        
+        const verificationSuccessMessage = 'Email verificado exitosamente';
+        logger.info(verificationSuccessMessage, { userId, email: user.email });
+
         return res.status(200).send(`
             <html>
                 <head>
@@ -114,18 +140,27 @@ export const verifyEmail = async (req: any, res: any) => {
             </html>
         `);
     } catch (error: any) {
-        console.error(error);
-        return res.status(500).json({ message: 'Error al verificar el correo.', error });
+        const errorMessage = 'Error al verificar email';
+        logger.error(errorMessage, {
+            error: error.message,
+            stack: error.stack,
+            userId
+        });
+        return res.status(500).json({ message: errorMessage, error });
     }
 };
 
 export const forgotPassword = async (req: any, res: any) => {
     const { email } = req.body;
+    const forgotPasswordLogMessage = 'Solicitud de recuperación de contraseña';
+    logger.info(forgotPasswordLogMessage, { email });
 
     try {
         const user = await User.findOne({ where: { email } });
         if (!user) {
-            return res.status(404).json({ message: 'email_not_found' });
+            const notFoundMessage = 'email_not_found';
+            logger.warn('Email no encontrado para recuperación', { email });
+            return res.status(404).json({ message: notFoundMessage });
         }
 
         const resetCode = `${crypto.randomInt(0, 10)}${crypto.randomInt(0, 10)}${crypto.randomInt(0, 10)}${crypto.randomInt(0, 10)}${crypto.randomInt(0, 10)}${crypto.randomInt(0, 10)}`;
@@ -136,26 +171,45 @@ export const forgotPassword = async (req: any, res: any) => {
         user.resetCodeExpiry = expiryDate;
         await user.save();
 
-        await sendResetPasswordEmail(email, resetCode);
+        const resetCodeGeneratedMessage = 'Código de recuperación generado';
+        logger.debug(resetCodeGeneratedMessage, { 
+            email,
+            resetCode: '******' 
+        });
 
-        res.status(200).json({ message: 'email enviado ' });
+        await sendResetPasswordEmail(email, resetCode);
+        const emailSentMessage = 'Email de recuperación enviado';
+        logger.info(emailSentMessage, { email });
+
+        res.status(200).json({ message: 'email enviado' });
     } catch (error: any) {
-        console.error(error);
-        res.status(500).json({ message: 'error_sending_email' });
+        const errorMessage = 'error_sending_email';
+        logger.error('Error en recuperación de contraseña', {
+            error: error.message,
+            stack: error.stack,
+            email
+        });
+        res.status(500).json({ message: errorMessage });
     }
 };
 
 export const resetPassword = async (req: any, res: any) => {
     const { email, code, newPassword } = req.body;
+    const resetPasswordLogMessage = 'Intento de restablecimiento de contraseña';
+    logger.info(resetPasswordLogMessage, { email });
 
     try {
         const user = await User.findOne({ where: { email } });
         if (!user) {
-            return res.status(404).json({ message: 'email_not_found' });
+            const notFoundMessage = 'email_not_found';
+            logger.warn('Usuario no encontrado al restablecer contraseña', { email });
+            return res.status(404).json({ message: notFoundMessage });
         }
 
         if (user.resetCode !== code) {
-            return res.status(400).json({ message: 'wrong_code' });
+            const wrongCodeMessage = 'wrong_code';
+            logger.warn('Código de restablecimiento incorrecto', { email });
+            return res.status(400).json({ message: wrongCodeMessage });
         }
 
         const currentTime = new Date();
@@ -163,25 +217,39 @@ export const resetPassword = async (req: any, res: any) => {
             user.resetCode = null;
             user.resetCodeExpiry = null;
             await user.save();
-            return res.status(400).json({ message: 'expired_code' });
+            
+            const expiredCodeMessage = 'expired_code';
+            logger.warn('Código de restablecimiento expirado', { email });
+            return res.status(400).json({ message: expiredCodeMessage });
         }
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         user.password = hashedPassword;
+        user.resetCode = null;
+        user.resetCodeExpiry = null;
         await user.save();
 
-        res.status(200).json({ message: 'contraseña actualizada ' });
+        const successMessage = 'contraseña actualizada';
+        logger.info('Contraseña restablecida exitosamente', { email });
+        res.status(200).json({ message: successMessage });
     } catch (error: any) {
-        console.error(error);
-        res.status(500).json({ message: 'password_updating_error' });
+        const errorMessage = 'password_updating_error';
+        logger.error('Error al restablecer contraseña', {
+            error: error.message,
+            stack: error.stack,
+            email
+        });
+        res.status(500).json({ message: errorMessage });
     }
 };
 
 export const login = async (req: any, res: any) => {
+    const { email } = req.body;
+    const loginLogMessage = 'Intento de inicio de sesión';
+    logger.info(loginLogMessage, { email });
+
     try {
         await loginSchemaValidator.validate(req.body);
-
-        const { email, password } = req.body;
 
         const user = await User.findOne({
             where: { email },
@@ -189,51 +257,93 @@ export const login = async (req: any, res: any) => {
         });
 
         if (!user) {
-            return res.status(401).json({ message: 'invalid_credentials' });
+            const invalidCredentialsMessage = 'invalid_credentials';
+            logger.warn('Credenciales inválidas - usuario no encontrado', { email });
+            return res.status(401).json({ message: invalidCredentialsMessage });
         }
 
-        const isPasswordValid = await bcrypt.compare(password, user.password);
+        const isPasswordValid = await bcrypt.compare(req.body.password, user.password);
         if (!isPasswordValid) {
+            logger.warn('Credenciales inválidas - contraseña incorrecta', { email });
             return res.status(401).json({ message: 'invalid_credentials' });
         }
 
         if (!user.email_verified) {
-            return res.status(401).json({ message: 'Por favor confirme primero su email' });
+            const unverifiedEmailMessage = 'Por favor confirme primero su email';
+            logger.warn('Intento de login con email no verificado', { email });
+            return res.status(401).json({ message: unverifiedEmailMessage });
         }
 
         const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET!, { expiresIn: '1h' });
 
-        return res.status(201).json({ message: 'Acceso exitoso', token, user });
+        const successMessage = 'Acceso exitoso';
+        logger.info('Inicio de sesión exitoso', { 
+            userId: user.id,
+            email: user.email
+        });
+
+        return res.status(201).json({ 
+            message: successMessage, 
+            token, 
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email
+            } 
+        });
     } catch (error: any) {
         if (error.name === 'ValidationError') {
-            return res.status(400).json({ message: error.errors });
+            const validationMessage = 'Error de validación en login';
+            logger.warn(validationMessage, { 
+                errors: error.errors,
+                email
+            });
+            return res.status(400).json({ message: validationMessage, errors: error.errors });
         }
 
-        console.error('Error al iniciar sesión:', error);
-        return res.status(500).json({ message: 'Error interno del servidor' });
+        const errorMessage = 'Error interno del servidor';
+        logger.error('Error en inicio de sesión', {
+            error: error.message,
+            stack: error.stack,
+            email
+        });
+        return res.status(500).json({ message: errorMessage });
     }
 };
 
-
 export const getUserById = async (req: any, res: any) => {
     const { id } = req.params;
+    const getUserLogMessage = 'Obteniendo usuario por ID';
+    logger.info(getUserLogMessage, { userId: id });
+
     try {
         const user = await User.findByPk(id);
         if (!user) {
-            return res.status(404).json({ message: 'Usuario no encontrado' });
+            const notFoundMessage = 'Usuario no encontrado';
+            logger.warn(notFoundMessage, { userId: id });
+            return res.status(404).json({ message: notFoundMessage });
         }
 
+        const successMessage = 'Usuario obtenido exitosamente';
+        logger.info(successMessage, { userId: id });
         return res.status(200).json({
-            id: user.id,
-            username: user.username,
-            email: user.email,
+            message: successMessage,
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+            }
         });
     } catch (error: any) {
-        console.error(error);
+        const errorMessage = 'Error al obtener usuario';
+        logger.error(errorMessage, {
+            error: error.message,
+            stack: error.stack,
+            userId: id
+        });
         return res.status(500).json({
-            message: 'Error al obtener el usuario',
+            message: errorMessage,
             error: error.message,
         });
     }
 };
-

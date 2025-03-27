@@ -4,6 +4,7 @@ import cors from 'cors';
 import userRoutes from './routes/router'; 
 import dotenv from 'dotenv';
 import { verifyToken } from './middleware/authJwt';
+import { logger } from './database/config/winston.config';
 
 dotenv.config();
 
@@ -31,5 +32,5 @@ app.use('/api', userRoutes);
 
 
 app.listen(app.get('port'), () => {
-  console.log(`🚀 Server is running on port ${app.get('port')}`);
+  logger.info(`🚀 Server is running on port ${app.get('port')}`);
 });

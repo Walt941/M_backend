@@ -9,6 +9,7 @@ export const {
   DB_HOST,
   DB_DATABASE,
   DB_DIALECT,
+  DB_PORT,
   JWT_SECRET,
   MAIL_SERVICE,
   MAIL_USER,

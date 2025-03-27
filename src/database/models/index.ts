@@ -1,12 +1,12 @@
 import { Sequelize, Dialect } from 'sequelize'; 
-import { DB_USERNAME, DB_PASSWORD, DB_HOST, DB_DATABASE } from '../../configs';
+import { DB_USERNAME, DB_PASSWORD, DB_HOST, DB_DATABASE, DB_DIALECT } from '../../configs';
 
 const config = {
   database: DB_DATABASE,
   username: DB_USERNAME,
   password: DB_PASSWORD,
   host: DB_HOST,
-  dialect: 'postgres' as Dialect, 
+  dialect: DB_DIALECT as Dialect, 
   port: 5432,
 };
 
